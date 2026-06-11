@@ -1,0 +1,12 @@
+venv/
+sd-venv/
+
+__pycache__/
+*.pyc
+
+output.png
+
+*.log
+
+.DS_Store
+Thumbs.db
