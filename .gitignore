@@ -1,5 +1,6 @@
 venv/
 sd-venv/
+models/
 
 __pycache__/
 *.pyc
@@ -10,3 +11,5 @@ output.png
 
 .DS_Store
 Thumbs.db
+
+*.zip
