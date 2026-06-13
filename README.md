@@ -14,3 +14,15 @@ The Stable Diffusion model will be downloaded automatically during the first run
 - Precision: float32
 - Inference Steps: 20
 - Output Format: PNG
+
+v1.1 now uses GPU acceleration with 40 inference steps. 
+
+For Window, simply double-click the `run.bat` file and run the program.
+
+On macOS/linux, run this command in the folder to turn the script into executable:
+
+`chmod +x run.sh`
+
+and run the file:
+
+`./run.sh`
