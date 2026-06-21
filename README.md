@@ -26,3 +26,9 @@ On macOS/linux, run this command in the folder to turn the script into executabl
 and run the file:
 
 `./run.sh`
+
+Some generated image of the sky:
+
+![sky 1](/output_27ba9ad73f51402297254bf842d27d80.png)
+![sky 2](/output_fa174b3882d54fdea09489675bdfa913.png)
+![sky 3](/output_ef5ba789eedf4c77bdcc9144e0495d6e.png)
