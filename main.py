@@ -35,27 +35,39 @@ root = tk.Tk()
 app = MainWindow(root)
 
 def log(text):
+    root.after(0, lambda: app.write_log(str(text)))
+
+def set_status(text):
+    root.after(0, lambda: app.set_status(text))
+
+def add_log(text):
     root.after(0, lambda: app.write_log(text))
 
-def run_generation(prompt):
+def set_ready():
+    root.after(0, lambda: app.set_status("Ready"))
 
+def run_generation(prompt, safety_enabled):
     controller.reset()
+
+    set_status("Generating...")
+    add_log(f"Prompt: {prompt}\n")
 
     def task():
         image_path, elapsed = generate_image(
             prompt,
             controller=controller,
-            logger=log
+            logger=add_log,
+            safety_enabled=safety_enabled
         )
 
         def update_ui():
             if image_path:
                 app.display_image(image_path)
-                app.write_log(f"\nDone in {elapsed:.2f} seconds\n")
-                app.set_status("Ready")
+                add_log(f"\nDone in {elapsed:.2f} seconds\n")
+                set_status("Ready")
             else:
-                app.write_log("\nNo image generated.\n")
-                app.set_status("Cancelled")
+                add_log("\nGeneration cancelled or failed.\n")
+                set_status("Idle")
 
         root.after(0, update_ui)
 
@@ -75,14 +87,14 @@ def on_generate():
     app.clear_log()
     app.set_status("Generating...")
 
-    run_generation(prompt)
+    safety_enabled = app.is_safety_enabled()
+    run_generation(prompt, safety_enabled)
 
 
 def on_cancel():
-
-    app.write_log("\nCancel requested...\n")
     controller.cancel()
-    app.set_status("Cancelling...")
+    add_log("\nCancel requested...\n")
+    set_status("Cancelling...")
 
 app.set_generate_callback(on_generate)
 app.set_cancel_callback(on_cancel)

@@ -31,6 +31,15 @@ class MainWindow:
         self.status_label = tk.Label(root, text="Ready")
         self.status_label.pack(pady=5)
 
+        self.safety_var = tk.BooleanVar(value=True)
+
+        self.safety_check = tk.Checkbutton(
+            self.top_frame,
+            text="Safety Checker",
+            variable=self.safety_var
+        )
+        self.safety_check.grid(row=0, column=3, padx=5)
+
         self.console = ScrolledText(
             root,
             height=12,
@@ -58,6 +67,9 @@ class MainWindow:
 
     def set_cancel_callback(self, callback):
         self.cancel_button.config(command=callback)
+
+    def is_safety_enabled(self):
+        return self.safety_var.get()
 
     def display_image(self, image_path):
         image = Image.open(image_path)

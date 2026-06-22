@@ -38,7 +38,6 @@ device, dtype = pick_device_and_dtype()
 pipe = StableDiffusionPipeline.from_pretrained(
     model_id,
     torch_dtype=dtype,
-    safety_checker=None,
     requires_safety_checker=False,
     cache_dir="./models"
 )
@@ -56,14 +55,12 @@ print(f"Precision: {dtype}")
 print("Model loaded successfully")
 
 
-def generate_image(prompt, controller=None, logger=print):
+def generate_image(prompt, controller=None, logger=print, safety_enabled=True):
     logger(f"Using device: {device.upper()}\n")
     logger("Starting generation...\n")
-    logger(f"Safety checker: {pipe.safety_checker}\n")
 
     start = time.perf_counter()
     cancelled = {"value": False}
-
     steps = 40
 
     def callback(step, timestep, latents):
@@ -75,11 +72,22 @@ def generate_image(prompt, controller=None, logger=print):
         logger(f"Step {step + 1}/{steps}\n")
 
     try:
+        if safety_enabled:
+            safety_checker = pipe.components.get("safety_checker")
+        else:
+            safety_checker = None
+
+        if safety_checker is None:
+            logger("Safety checker: DISABLED\n")
+        else:
+            logger("Safety checker: ENABLED\n")
+
         result = pipe(
             prompt,
             num_inference_steps=steps,
             callback=callback,
-            callback_steps=1
+            callback_steps=1,
+            safety_checker=safety_checker
         )
 
         image = result.images[0]
