@@ -1,6 +1,8 @@
 import time
 import uuid
 import torch
+import threading
+import queue
 from diffusers import StableDiffusionPipeline
 
 model_id = "runwayml/stable-diffusion-v1-5"
@@ -8,20 +10,19 @@ model_id = "runwayml/stable-diffusion-v1-5"
 print("Loading model...")
 
 
+# =========================================================
+# DEVICE SETUP
+# =========================================================
 def pick_device_and_dtype():
     if torch.cuda.is_available():
         device = "cuda"
         gpu_name = torch.cuda.get_device_name(0)
         print(f"GPU detected: {gpu_name}")
 
-        # Conservative FP16 selection
-        # GTX series and some older/laptop GPUs are more unstable in fp16
         if any(x in gpu_name for x in ["GTX", "MX", "1650", "1060"]):
             dtype = torch.float32
-            print("Using FP32 (safer for this GPU)")
         else:
             dtype = torch.float16
-            print("Using FP16")
 
         return device, dtype
 
@@ -29,7 +30,6 @@ def pick_device_and_dtype():
         print("Using Apple MPS GPU")
         return "mps", torch.float16
 
-    print("No GPU detected. Using CPU (FP32)")
     return "cpu", torch.float32
 
 
@@ -55,55 +55,89 @@ print(f"Precision: {dtype}")
 print("Model loaded successfully")
 
 
-def generate_image(prompt, controller=None, logger=print, safety_enabled=True):
-    logger(f"Using device: {device.upper()}\n")
-    logger("Starting generation...\n")
+# =========================================================
+# MAIN GENERATION ENGINE
+# =========================================================
+def generate_image(
+    prompt,
+    controller=None,
+    logger=print,
+    safety_enabled=True,
+    progress_queue=None,
+    result_queue=None,
+    steps=40
+):
+    """
+    Fully async-safe generation engine:
+    - progress → progress_queue
+    - result → result_queue
+    """
 
-    start = time.perf_counter()
-    cancelled = {"value": False}
-    steps = 40
+    def worker():
+        logger(f"Using device: {device.upper()}\n")
+        logger("Starting generation...\n")
 
-    def callback(step, timestep, latents):
-        if controller and controller.is_cancelled():
-            cancelled["value"] = True
-            logger("\nCancel requested. Stopping early...\n")
-            raise Exception("Generation cancelled")
+        start = time.perf_counter()
+        cancelled = {"value": False}
 
-        logger(f"Step {step + 1}/{steps}\n")
+        # reset progress
+        if progress_queue:
+            progress_queue.put(0)
 
-    try:
-        if safety_enabled:
-            safety_checker = pipe.components.get("safety_checker")
-        else:
-            safety_checker = None
+        # -------------------------
+        # PROGRESS CALLBACK (ACCURATE)
+        # -------------------------
+        def callback(step, timestep, latents):
+            if controller and controller.is_cancelled():
+                cancelled["value"] = True
+                logger("\nCancel requested. Stopping early...\n")
+                raise Exception("Generation cancelled")
 
-        if safety_checker is None:
-            logger("Safety checker: DISABLED\n")
-        else:
-            logger("Safety checker: ENABLED\n")
+            # EXACT step sync (no +1 drift)
+            if progress_queue:
+                progress_queue.put(step + 1)
 
-        result = pipe(
-            prompt,
-            num_inference_steps=steps,
-            callback=callback,
-            callback_steps=1,
-            safety_checker=safety_checker
-        )
+        try:
+            safety_checker = pipe.components.get("safety_checker") if safety_enabled else None
 
-        image = result.images[0]
+            logger("Safety checker: ENABLED\n" if safety_checker else "Safety checker: DISABLED\n")
 
-        if cancelled["value"]:
-            return None, 0
+            result = pipe(
+                prompt,
+                num_inference_steps=steps,
+                callback=callback,
+                callback_steps=1,
+                safety_checker=safety_checker
+            )
 
-        filename = f"output_{uuid.uuid4().hex}.png"
-        image.save(filename)
+            image = result.images[0]
 
-        elapsed = time.perf_counter() - start
+            if cancelled["value"]:
+                if result_queue:
+                    result_queue.put((None, 0))
+                return
 
-        logger("\nDone generating image\n")
+            filename = f"output_{uuid.uuid4().hex}.png"
+            image.save(filename)
 
-        return filename, elapsed
+            elapsed = time.perf_counter() - start
 
-    except Exception as e:
-        logger(f"\nStopped: {str(e)}\n")
-        return None, 0
+            logger("\nDone generating image\n")
+
+            # FINAL STEP MUST BE EXACT 40
+            if progress_queue:
+                progress_queue.put(steps)
+
+            # send result to UI
+            if result_queue:
+                result_queue.put((filename, elapsed))
+
+        except Exception as e:
+            logger(f"\nStopped: {str(e)}\n")
+
+            if result_queue:
+                result_queue.put((None, 0))
+
+    # IMPORTANT: fire worker thread here
+    t = threading.Thread(target=worker, daemon=True)
+    t.start()
