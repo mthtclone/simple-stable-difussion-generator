@@ -127,3 +127,7 @@ class MainWindow:
 
     def is_safety_enabled(self):
         return self.safety_var.get()
+
+    def set_generate_enabled(self, enabled):
+        state = "normal" if enabled else "disabled"
+        self.generate_button.config(state=state)

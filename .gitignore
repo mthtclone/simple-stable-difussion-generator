@@ -1,8 +1,9 @@
 venv/
 sd-venv/
 models/
-img/
+images/
 
+version.txt
 __pycache__/
 *.pyc
 
