@@ -13,8 +13,6 @@ The Stable Diffusion model will be downloaded automatically during the first run
 - Inference Steps: 40
 - Output Format: PNG
 
-**Safety checker is disabled for local usage**
-
 ---
 
 For Window, simply double-click the `run.bat` file and run the program.
