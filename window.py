@@ -1,8 +1,10 @@
 import tkinter as tk
 from tkinter.scrolledtext import ScrolledText
 from PIL import Image, ImageTk
-from tkinter import ttk
 import queue
+
+import ttkbootstrap as tb
+from tkinter import ttk
 
 
 class MainWindow:
@@ -15,20 +17,20 @@ class MainWindow:
         self.minsize_height = 700
         self.root.minsize(self.minsize_width, self.minsize_height)
 
-        self.top_frame = tk.Frame(root)
+        self.top_frame = ttk.Frame(root)
         self.top_frame.pack(fill="x", padx=10, pady=10)
 
-        self.prompt_entry = tk.Entry(self.top_frame, width=80)
+        self.prompt_entry = ttk.Entry(self.top_frame, width=80)
         self.prompt_entry.grid(row=0, column=0, padx=5, sticky="ew")
 
-        self.generate_button = tk.Button(self.top_frame, text="Generate", width=12)
+        self.generate_button = ttk.Button(self.top_frame, text="Generate", width=12)
         self.generate_button.grid(row=0, column=1, padx=5)
 
-        self.cancel_button = tk.Button(self.top_frame, text="Cancel", width=12)
+        self.cancel_button = ttk.Button(self.top_frame, text="Cancel", width=12)
         self.cancel_button.grid(row=0, column=2, padx=5)
 
         self.safety_var = tk.BooleanVar(value=True)
-        self.safety_check = tk.Checkbutton(
+        self.safety_check = ttk.Checkbutton(
             self.top_frame,
             text="Safety Checker",
             variable=self.safety_var
@@ -37,26 +39,34 @@ class MainWindow:
 
         self.top_frame.columnconfigure(0, weight=1)
 
-        self.content_frame = tk.Frame(root)
+        self.content_frame = ttk.Frame(root, padding=10)
         self.content_frame.pack(fill="both", expand=True, padx=10, pady=(0, 10))
 
         self.content_frame.columnconfigure(0, weight=3)
         self.content_frame.columnconfigure(1, weight=2)
         self.content_frame.rowconfigure(0, weight=1)
 
-        self.image_frame = tk.Frame(self.content_frame, bg="black", bd=2, relief="sunken")
+        self.image_frame = ttk.Frame(self.content_frame, bootstyle="secondary", padding=5)
         self.image_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 5))
 
-        self.image_label = tk.Label(self.image_frame, bg="black")
+        self.image_frame.columnconfigure(0, weight=1)
+        self.image_frame.rowconfigure(0, weight=1)
+
+        self.image_label = ttk.Label(self.image_frame, text="", anchor="center")
         self.image_label.pack(fill="both", expand=True)
 
         self.console = ScrolledText(self.content_frame, font=("Consolas", 10))
         self.console.grid(row=0, column=1, sticky="nsew", padx=(5, 0))
 
-        self.status_label = tk.Label(root, text="Ready", anchor="w")
+        self.status_label = ttk.Label(root, text="Ready", anchor="w")
         self.status_label.pack(fill="x", padx=10, pady=(0, 5))
 
-        self.progress = ttk.Progressbar(root, orient="horizontal", mode="determinate")
+        self.progress = ttk.Progressbar(
+            root,
+            orient="horizontal",
+            mode="determinate",
+            bootstyle="primary-striped"
+        )
         self.progress.pack(fill="x", padx=10, pady=(0, 10))
 
         self.progress_queue = queue.Queue()

@@ -13,6 +13,10 @@ torch.set_grad_enabled(False)
 
 from window import MainWindow
 
+from ttkbootstrap import Style
+import ttkbootstrap as tb
+from tkinter import ttk
+
 from generate import (
     generate_image,
     load_model_async,
@@ -36,7 +40,7 @@ class GenerationController:
 
 controller = GenerationController()
 
-root = tk.Tk()
+root = tb.Window(themename="darkly")
 app = MainWindow(root)
 
 progress_queue = queue.Queue()
