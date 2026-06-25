@@ -46,6 +46,7 @@ torchaudio==2.11.0+cu128
 torchvision==0.26.0+cu128
 tqdm==4.68.2
 transformers==5.10.2
+ttkbootstrap==1.20.3
 typer==0.25.1
 typing_extensions==4.15.0
 urllib3==2.7.0
