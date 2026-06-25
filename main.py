@@ -1,7 +1,6 @@
 import sys
 import threading
 import tkinter as tk
-import ttkbootstrap as tb
 import queue
 
 import os
@@ -13,6 +12,10 @@ import torch
 torch.set_grad_enabled(False)
 
 from window import MainWindow
+
+from ttkbootstrap import Style
+import ttkbootstrap as tb
+from tkinter import ttk
 
 from generate import (
     generate_image,
